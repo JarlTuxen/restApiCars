@@ -1,16 +1,17 @@
 package dk.kea.restapicars.controller;
 
 import dk.kea.restapicars.model.Car;
+import dk.kea.restapicars.model.Model;
 import dk.kea.restapicars.repository.CarRepository;
-import org.springframework.http.HttpHeaders;
+import dk.kea.restapicars.repository.ModelRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.swing.text.html.Option;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 //alle /cars requests håndteres i denne controller
 @RequestMapping("/cars")
@@ -18,9 +19,11 @@ import java.util.Optional;
 public class CarController {
 
     private CarRepository carRepository;
+    private ModelRepository modelRepository;
 
-    public CarController(CarRepository carRepository){
+    public CarController(CarRepository carRepository, ModelRepository modelRepository) {
         this.carRepository = carRepository;
+        this.modelRepository = modelRepository;
     }
 
     //HTTP Get List
@@ -49,12 +52,16 @@ public class CarController {
     @PostMapping(value = "", consumes = "application/json")
     public ResponseEntity<Car> create(@RequestBody Car car){
         Car newCar = carRepository.save(car);
-        //location /cars/{id} in responseheader
-        //HttpHeaders headers = new HttpHeaders();
-        //headers.add("location", "/cars/" + newCar.getId());
-        //return new ResponseEntity<Car>(newCar, headers, HttpStatus.CREATED);
+
+        //brug id fra newCar som fremmednøgle i model
+        Set<Model> newModels = car.getModels();
+        for (Model model : newModels){
+            model.setCar(newCar);
+            modelRepository.save(model);
+        }
 
         //ResponseEntity builder pattern
+        //location /cars/{id} in responseheader
         return ResponseEntity.status(HttpStatus.CREATED).header("location", "/cars/" + newCar.getId()).body(newCar);
     }
 
@@ -62,13 +69,21 @@ public class CarController {
     @PutMapping("/{id}")
     public ResponseEntity<String> update(@PathVariable("id") Long id, @RequestBody Car car){
         Optional<Car> optionalCar = carRepository.findById(id);
-        if (!optionalCar.isPresent()){
-            // id not found
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("{'msg' : 'car " + id + " not found'}");
+        if (optionalCar.isPresent()){
+            if (id.equals(car.getId())) {
+                //path id og car object id ens så gem
+                carRepository.save(car);
+                return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+            }
+            else{
+                //forskel på path id og car object id så Bad Request
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            }
         }
-        carRepository.save(car);
-        return ResponseEntity.status(HttpStatus.OK).body("{'msg' : 'updated'}");
+        else{
+            // id not found
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     //HTTP Delete
@@ -77,10 +92,9 @@ public class CarController {
         Optional<Car> optionalCar = carRepository.findById(id);
         if (!optionalCar.isPresent()){
             //id not found
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("{'msg' : 'car " + id + " not found'}");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
         carRepository.deleteById(id);
-        return ResponseEntity.status(HttpStatus.OK).body("{'msg' : 'deleted'}");
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }
