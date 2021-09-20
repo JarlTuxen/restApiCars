@@ -32,6 +32,7 @@ public class CarController {
     }
 
     //HTTP Get by ID
+    @GetMapping("/{id}")
     public ResponseEntity<Optional<Car>> findById(@PathVariable Long id){
         Optional<Car> optionalCar = carRepository.findById(id);
         if (optionalCar.isPresent()){
