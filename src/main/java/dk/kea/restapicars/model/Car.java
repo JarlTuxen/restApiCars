@@ -14,6 +14,10 @@ public class Car {
     public Car() {
     }
 
+    public Car(String name) {
+        this.name = name;
+    }
+
     public Long getId() {
         return id;
     }

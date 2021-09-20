@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+//alle /cars requests håndteres i denne controller
+@RequestMapping("/cars")
 @RestController
 public class CarController {
 
@@ -22,7 +24,7 @@ public class CarController {
     }
 
     //HTTP Get List
-    @GetMapping("/cars")
+    @GetMapping("")
     public ResponseEntity<List<Car>> findAll(){
         List<Car> carList = new ArrayList<>();
         carRepository.findAll().forEach(carList::add);
@@ -43,19 +45,20 @@ public class CarController {
 
     // HTTP Post i.e. create
     @CrossOrigin(origins = "*", exposedHeaders = "Location")
-    @PostMapping(value = "/cars", consumes = "application/json")
+    @PostMapping(value = "", consumes = "application/json")
     public ResponseEntity<Car> create(@RequestBody Car car){
         Car newCar = carRepository.save(car);
         //location /cars/{id} in responseheader
         //HttpHeaders headers = new HttpHeaders();
         //headers.add("location", "/cars/" + newCar.getId());
         //return new ResponseEntity<Car>(newCar, headers, HttpStatus.CREATED);
+
         //ResponseEntity builder pattern
-        return ResponseEntity.status(HttpStatus.CREATED).header("location", "/cars/" + newCar.getId()).body(newCar); //hvordan tilgå headers?
+        return ResponseEntity.status(HttpStatus.CREATED).header("location", "/cars/" + newCar.getId()).body(newCar);
     }
 
     //HTTP Put i.e. update
-    @PutMapping("/cars/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<String> update(@PathVariable("id") Long id, @RequestBody Car car){
         Optional<Car> optionalCar = carRepository.findById(id);
         if (!optionalCar.isPresent()){
@@ -68,7 +71,7 @@ public class CarController {
     }
 
     //HTTP Delete
-    @DeleteMapping("/cars/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<String> delete(@PathVariable("id") Long id){
         Optional<Car> optionalCar = carRepository.findById(id);
         if (!optionalCar.isPresent()){
